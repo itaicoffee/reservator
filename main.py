@@ -22,19 +22,20 @@ _TOKEN = ""
 
 def get_headers() -> dict[str, str]:
     return {
-        'origin': 'https://resy.com',
-        'accept-encoding': 'gzip, deflate, br',
-        'x-origin': 'https://resy.com',
-        'accept-language': 'en-US,en;q=0.9',
-        'authorization': 'ResyAPI api_key="VbWk7s3L4KiK5fzlO7JD3Q5EYolJI7n5"',
-        'content-type': 'application/x-www-form-urlencoded',
-        'accept': 'application/json, text/plain, */*',
-        'referer': 'https://resy.com/',
-        'authority': 'api.resy.com',
-        'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36',
+        "origin": "https://resy.com",
+        "accept-encoding": "gzip, deflate, br",
+        "x-origin": "https://resy.com",
+        "accept-language": "en-US,en;q=0.9",
+        "authorization": 'ResyAPI api_key="VbWk7s3L4KiK5fzlO7JD3Q5EYolJI7n5"',
+        "content-type": "application/x-www-form-urlencoded",
+        "accept": "application/json, text/plain, */*",
+        "referer": "https://resy.com/",
+        "authority": "api.resy.com",
+        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36",
         "x-resy-auth-token": _TOKEN,
         "x-resy-universal-auth": _TOKEN,
     }
+
 
 _VENUE = {
     "dante": "1290",
@@ -45,15 +46,20 @@ _TIME = {
     "evening": ("21:15:00", "21:45:00"),
 }
 
-_DAY_ORDINAL = dict((y, x) for x, y in enumerate([
-    "monday",
-    "tuesday",
-    "wednesday",
-    "thursday",
-    "friday",
-    "saturday",
-    "sunday",
-]))
+_DAY_ORDINAL = dict(
+    (y, x)
+    for x, y in enumerate(
+        [
+            "monday",
+            "tuesday",
+            "wednesday",
+            "thursday",
+            "friday",
+            "saturday",
+            "sunday",
+        ]
+    )
+)
 
 _DATE_FORMAT = "%Y-%m-%d"
 
@@ -147,11 +153,7 @@ def _load_asks(url: str) -> Generator[AskItem, None, None]:
         start_day, end_day = _split_as_range(day_range)
         start_time, end_time = _split_as_range(time_range)
         num_seats = int(num_seats)
-        venue_names = [
-            s.strip()
-            for s in venue_names.split(",")
-            if len(s) > 0
-        ]
+        venue_names = [s.strip() for s in venue_names.split(",") if len(s) > 0]
         yield AskItem(
             start_day,
             end_day,
@@ -178,9 +180,14 @@ def _load_venue_hits():
     _load_venues(_VENUE_HITS)
 
 
-def _get_availability(venue_id: str, day: str, num_seats: int, start_time: str, end_time: str):
-    url = _ROOT_4 + f"/find?lat=0&long=0&day={day}&party_size={num_seats}&venue_id={venue_id}" \
-                    f"&time_preferred_start={start_time}?&time_preferred_end={end_time}"
+def _get_availability(
+    venue_id: str, day: str, num_seats: int, start_time: str, end_time: str
+):
+    url = (
+        _ROOT_4
+        + f"/find?lat=0&long=0&day={day}&party_size={num_seats}&venue_id={venue_id}"
+        f"&time_preferred_start={start_time}?&time_preferred_end={end_time}"
+    )
     r = requests.get(url, headers=get_headers())
     r.raise_for_status()
     return r.json()
@@ -210,7 +217,7 @@ def _reserve(book_token: str, force_replace: bool):
     url = _ROOT_3 + "/book"
     data = {
         "book_token": book_token,
-        "struct_payment_method": "{\"id\":9293374}",
+        "struct_payment_method": '{"id":9293374}',
         "source_id": "resy.com-venue-details",
     }
     if force_replace:
@@ -279,8 +286,12 @@ def get_reservations():
         yield item
 
 
-def get_availability(venue_id: str, day: str, num_seats: int, start_time: str, end_time: str):
-    print(f"checking availability: {_get_venue_name(venue_id) or venue_id}, {day}, {num_seats}")
+def get_availability(
+    venue_id: str, day: str, num_seats: int, start_time: str, end_time: str
+):
+    print(
+        f"checking availability: {_get_venue_name(venue_id) or venue_id}, {day}, {num_seats}"
+    )
     r = _get_availability(venue_id, day, num_seats, start_time, end_time)
     if len(r["results"]["venues"]) == 0:
         print(f"failed to get availability: {_get_venue_name(venue_id) or venue_id}")
@@ -311,11 +322,7 @@ def get_hit_list_availability(days: list[str], num_seats: int) -> str:
     for venue_name, venue_id in _VENUE.items():
         for day in days:
             slots = get_availability(venue_id, day, num_seats, start_time, end_time)
-            slots = [
-                slot
-                for slot in slots
-                if "19:00:00" <= slot.time < "21:00:00"
-            ]
+            slots = [slot for slot in slots if "19:00:00" <= slot.time < "21:00:00"]
             if len(slots) > 0:
                 s.append(venue_name)
                 for slot in slots:
@@ -323,7 +330,9 @@ def get_hit_list_availability(days: list[str], num_seats: int) -> str:
     return "\n".join(s)
 
 
-def post_notify_route(venue_id: str, day: str, start_time: str, end_time: str, num_seats: int):
+def post_notify_route(
+    venue_id: str, day: str, start_time: str, end_time: str, num_seats: int
+):
     url = _ROOT + "/notify"
     data = {
         "venue_id": venue_id,
@@ -361,7 +370,8 @@ def get_search_route(query, day, num_seats):
         "highlight": {"pre_tag": "<b>", "post_tag": "</b>"},
         "per_page": 10,
         "query": query,
-        "slot_filter": {"day": day, "party_size": num_seats}, "types": ["venue", "cuisine"]
+        "slot_filter": {"day": day, "party_size": num_seats},
+        "types": ["venue", "cuisine"],
     }
     _headers = get_headers()
     _headers["content-type"] = "application/json;charset=UTF-8"
@@ -426,8 +436,8 @@ def process_ask(ask: AskItem):
         res.venue_id
         for res in reservations
         if (
-            ask.start_day <= res.day <= ask.end_day and
-            ask.start_time <= res.time <= ask.end_time
+            ask.start_day <= res.day <= ask.end_day
+            and ask.start_time <= res.time <= ask.end_time
             # don't check num seats...
         )
     }
@@ -442,15 +452,21 @@ def process_ask(ask: AskItem):
         if venue_id is None:
             continue
         if venue_id in reservations_venue_ids:
-            print(f"best reservation already booked at {_get_venue_name(venue_id) or venue_id}")
+            print(
+                f"best reservation already booked at {_get_venue_name(venue_id) or venue_id}"
+            )
             return
         print(f"searching venue {venue_name}")
         for day in _days_between(ask.start_day, ask.end_day):
-            slots = get_availability(venue_id, day, ask.num_seats, ask.start_time, ask.end_time)
+            slots = get_availability(
+                venue_id, day, ask.num_seats, ask.start_time, ask.end_time
+            )
             for slot in slots:
                 if slot.time < ask.start_time or slot.time > ask.end_time:
                     continue
-                if any([s in slot.kind.lower() for s in ("outdoors", "outdoor", "patio")]):
+                if any(
+                    [s in slot.kind.lower() for s in ("outdoors", "outdoor", "patio")]
+                ):
                     print(f"skipping [{slot.kind.lower()} slot {slot}")
                     continue
                 print(f"getting book token for {slot}")
@@ -461,7 +477,9 @@ def process_ask(ask: AskItem):
                     print(f"failed to get book {slot}")
                 else:
                     resy_token, reservation_id = reservation_result
-                    print(f"reserved with resy token {resy_token} and reservation id {reservation_id}")
+                    print(
+                        f"reserved with resy token {resy_token} and reservation id {reservation_id}"
+                    )
                 return
         print(f"no slots found for venue {venue_name}")
 
@@ -485,10 +503,7 @@ def hello_world():
         start_date = dt.strptime(start_date, format_)
         end_date = dt.strptime(end_date, format_)
         num_dates = (end_date - start_date).days
-        days = (
-            start_date + timedelta(days=x)
-            for x in range(num_dates + 1)
-        )
+        days = (start_date + timedelta(days=x) for x in range(num_dates + 1))
         days = [d.strftime(format_) for d in days]
 
         global _VENUE
@@ -508,7 +523,7 @@ def hello_world():
         #     return redirect(url_for('index'))
     # return "Hi there"
     if True:
-        return render_template('main.html')
+        return render_template("main.html")
     _load_venue_hits()
     return f"Hello from Flask! loaded {len(_VENUE)} hits."
 
